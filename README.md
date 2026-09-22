@@ -68,7 +68,8 @@ uvicorn q4_realtime_nudges.server:app --port 8004
 python -m q4_realtime_nudges.simulate --scenario missed_cross_sell
 
 # To see demo of live project -
- uvicorn app.main:app --port 8080 
+ uvicorn app.main:app --port 8080
+then open this link - http://127.0.0.1:8080
 ```
 
 ## Runs offline vs needs keys
