@@ -66,6 +66,9 @@ uvicorn q1_voice_agent.webhook:app --port 8001
 # Q4: run the real-time nudge pipeline + dashboard
 uvicorn q4_realtime_nudges.server:app --port 8004
 python -m q4_realtime_nudges.simulate --scenario missed_cross_sell
+
+# To see demo of live project -
+ uvicorn app.main:app --port 8080 
 ```
 
 ## Runs offline vs needs keys
