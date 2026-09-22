@@ -129,3 +129,13 @@ python -m q3_native_bots.voice_demo philippines
 ## Real voice calls with Vapi (needs your keys)
 See [`docs/vapi_setup.md`](docs/vapi_setup.md) for step-by-step connection of the
 Q1 and Q3 assistants to actual phone/web calls.
+
+
+## Completed by-
+```bash
+Rameez Siddiqui
+Gmail - rameezsid1234@gmail.com
+PHONE - 7428842647
+IIIT BHUBANESWAR
+```
+
