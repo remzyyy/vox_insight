@@ -1,4 +1,4 @@
-# VoxInsight — AI Engineer Assessment Submission
+# VoxInsight 
 
 A single, runnable repository covering all four assessment questions. The
 **Question 2 knowledge base** is the shared RAG foundation that the
