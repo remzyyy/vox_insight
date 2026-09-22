@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Q3 · Native Bots — VoxInsight</title>
+<link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="/"><span class="dot"></span> VoxInsight</a>
+  <div class="links">
+    <a href="/">Home</a><a href="/q1">Q1 · Voice Agent</a>
+    <a href="/q2">Q2 · Knowledge Base</a><a href="/q3" class="active">Q3 · Native Bots</a>
+    <a href="/q4">Q4 · Live Nudges</a><a href="/calls">Recorded Calls</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 class="page-title">Q3 — Native-Language Bots</h1>
+  <p class="page-sub">Localized (not literally translated) financial conversations. Lines are spoken aloud; your browser voice approximates the accent.</p>
+
+  <div class="row" style="margin-bottom:16px">
+    <span class="hint">Market:</span>
+    <button class="btn" id="btnph" onclick="setMarket('philippines')">Philippines · Taglish</button>
+    <button class="btn ghost" id="btnid" onclick="setMarket('indonesia')">Indonesia · Bahasa</button>
+    <button class="btn ghost" onclick="synth.cancel()">■ Stop voice</button>
+    <span id="info" class="hint" style="margin-left:8px"></span>
+  </div>
+
+  <div class="split">
+    <div class="panel">
+      <h2>Talk to the bot</h2>
+      <p class="hint">Type your question in English or the local language. The bot replies in-language and speaks it. Try an objection, a FAQ, or ask for a human.</p>
+      <div class="row">
+        <input id="q" type="text" placeholder="e.g. mahal ang premium / berapa denda / can I talk to a person?" onkeydown="if(event.key==='Enter')ask()"/>
+        <button class="btn" onclick="ask()">Ask</button>
+      </div>
+      <div class="chips" id="chips"></div>
+      <label class="hint"><input type="checkbox" id="voice" checked/> speak answers aloud</label>
+      <div class="log" id="chat"></div>
+      <div style="margin-top:10px"><button class="btn ghost" onclick="playScript()">▶ Play full scripted flow</button></div>
+      <div class="log" id="lines"></div>
+    </div>
+    <div class="panel">
+      <h2>Localization, not translation</h2>
+      <p class="hint">Each example shows the rejected literal version vs the natural localized line.</p>
+      <div id="examples"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+ const synth=window.speechSynthesis;
+ let market='philippines', lang='fil-PH';
+ const PRESETS={
+   philippines:['Magkano po ang premium?','Mahal po yata ang premium','Sino po pwede maging beneficiary?','Ano po kung na-lapse ang policy?','Pwede po bang makausap ang tao?'],
+   indonesia:['Berapa denda kalau telat bayar?','Saya belum ada uang bulan ini','Bisa tidak tenornya diperpanjang?','Kalau mau lunasi lebih awal?','Saya mau bicara dengan orang']
+ };
+
+ function speak(t){ if(!document.getElementById('voice').checked) return;
+   const u=new SpeechSynthesisUtterance(t); u.lang=lang; synth.speak(u); }
+ function chatBubble(cls,who,text){ const d=document.createElement('div'); d.className='bubble '+cls;
+   d.innerHTML='<div class="who">'+who+'</div>'+text; const box=document.getElementById('chat');
+   box.appendChild(d); box.scrollTop=box.scrollHeight; }
+ function preset(q){ document.getElementById('q').value=q; ask(); }
+
+ async function setMarket(m){
+   market=m; synth.cancel();
+   document.getElementById('btnph').className='btn'+(m==='philippines'?'':' ghost');
+   document.getElementById('btnid').className='btn'+(m==='indonesia'?'':' ghost');
+   document.getElementById('chat').innerHTML='';
+   document.getElementById('lines').innerHTML='';
+   const r=await fetch('/api/q3/'+m).then(x=>x.json()); lang=r.lang;
+   document.getElementById('info').textContent=m.toUpperCase()+' · '+r.sector+' · '+r.languages.join(', ');
+   document.getElementById('chips').innerHTML=PRESETS[m].map(p=>
+     '<button class="btn ghost" onclick="preset(\''+p.replace(/'/g,"\\'")+'\')">'+p+'</button>').join('');
+   document.getElementById('examples').innerHTML=r.localization_examples.map(e=>(
+     '<div class="example"><b>'+e.situation+'</b>'+
+     '<div class="lit">✗ literal: '+e.literal+'</div>'+
+     '<div class="loc">✓ localized: '+e.localized+'</div>'+
+     '<div class="why">'+e.why+'</div></div>'
+   )).join('');
+ }
+
+ async function ask(){
+   const q=document.getElementById('q').value.trim(); if(!q) return;
+   chatBubble('you','You',q); document.getElementById('q').value='';
+   const r=await fetch('/api/q3/'+market+'/ask',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({question:q})}).then(x=>x.json());
+   let cls='bot'; if(r.kind==='fallback')cls='bot fb'; if(r.kind==='escalation')cls='bot esc';
+   let who=(market==='philippines'?'Maya':'Rina');
+   if(r.matched) who+=' <span class="pill">'+r.kind+'</span>';
+   chatBubble(cls,who,r.answer);
+   speak(r.answer);
+ }
+
+ async function playScript(){
+   synth.cancel();
+   const r=await fetch('/api/q3/'+market).then(x=>x.json());
+   const box=document.getElementById('lines'); box.innerHTML='';
+   let i=0;
+   (function next(){
+     if(i>=r.lines.length) return;
+     const ln=r.lines[i++];
+     const d=document.createElement('div'); d.className='bubble bot';
+     d.innerHTML='<div class="who">'+ln.label+'</div>'+ln.text;
+     box.appendChild(d); box.scrollTop=box.scrollHeight;
+     if(document.getElementById('voice').checked){
+       const u=new SpeechSynthesisUtterance(ln.text); u.lang=r.lang;
+       u.onend=()=>setTimeout(next,250); synth.speak(u);
+     } else { setTimeout(next,300); }
+   })();
+ }
+
+ setMarket('philippines');
+</script>
+</body>
+</html>

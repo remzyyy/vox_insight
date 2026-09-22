@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>VoxInsight — AI Voice & Insights Console</title>
+<link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="/"><span class="dot"></span> VoxInsight</a>
+  <div class="links">
+    <a href="/" class="active">Home</a>
+    <a href="/q1">Q1 · Voice Agent</a>
+    <a href="/q2">Q2 · Knowledge Base</a>
+    <a href="/q3">Q3 · Native Bots</a>
+    <a href="/q4">Q4 · Live Nudges</a>
+    <a href="/calls">Recorded Calls</a>
+  </div>
+</nav>
+
+<section class="hero">
+  <h1>VoxInsight AI Console</h1>
+  <p>One console for all four assessment deliverables: a knowledge-grounded voice
+     agent, a production knowledge base, native-language bots, and real-time call
+     nudges. The knowledge base powers the voice agent — no hardcoded answers.</p>
+  <div class="badges">
+    <span class="badge">Use case: Business-loan qualification</span>
+    <span class="badge">Voice platform: Vapi</span>
+    <span class="badge" id="kbBadge">KB: …</span>
+    <span class="badge" id="llmBadge">LLM: …</span>
+  </div>
+</section>
+
+<div class="container">
+  <div class="grid">
+    <a class="card" href="/q1">
+      <div class="tag">QUESTION 1</div>
+      <h3>Knowledge-Grounded Voice Agent</h3>
+      <p>Ask "Aria" about loans. Answers are grounded in the Q2 KB, spoken aloud,
+         with citations, safe fallback, and human escalation.</p>
+      <div class="go">Open demo →</div>
+    </a>
+    <a class="card" href="/q2">
+      <div class="tag">QUESTION 2</div>
+      <h3>Production Knowledge Base</h3>
+      <p>Search the cleaned, PII-safe, traceable KB. See ranked results with
+         source citations and confidence.</p>
+      <div class="go">Open demo →</div>
+    </a>
+    <a class="card" href="/q3">
+      <div class="tag">QUESTION 3</div>
+      <h3>Native-Language Bots</h3>
+      <p>Philippines (Taglish) & Indonesia (Bahasa) bots that speak localized
+         lines — not literal translation — with code-switching.</p>
+      <div class="go">Open demo →</div>
+    </a>
+    <a class="card" href="/q4">
+      <div class="tag">QUESTION 4</div>
+      <h3>Live Insights & Nudges</h3>
+      <p>Stream a call in real time and watch actionable nudges appear within
+         seconds, with latency and false-positive control.</p>
+      <div class="go">Open demo →</div>
+    </a>
+    <a class="card" href="/calls">
+      <div class="tag">EVIDENCE</div>
+      <h3>Recorded Test Calls</h3>
+      <p>Listen to the 7 real Vapi calls (Q1 + Q3 Philippines & Indonesia) with
+         audio players and full transcripts.</p>
+      <div class="go">Open →</div>
+    </a>
+  </div>
+</div>
+
+<div class="footer">VoxInsight · runs offline (no keys) · connect Vapi for real calls (see docs/vapi_setup.md)</div>
+
+<script>
+ fetch('/api/q2/stats').then(r=>r.json()).then(d=>{
+   document.getElementById('kbBadge').textContent = 'KB: '+d.chunks+' chunks ('+d.embed_model+')';
+   document.getElementById('llmBadge').textContent = 'LLM: '+(d.openai?'OpenAI':'offline heuristics');
+ }).catch(()=>{});
+</script>
+</body>
+</html>

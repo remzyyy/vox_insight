@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Q1 · Voice Agent — VoxInsight</title>
+<link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="/"><span class="dot"></span> VoxInsight</a>
+  <div class="links">
+    <a href="/">Home</a><a href="/q1" class="active">Q1 · Voice Agent</a>
+    <a href="/q2">Q2 · Knowledge Base</a><a href="/q3">Q3 · Native Bots</a>
+    <a href="/q4">Q4 · Live Nudges</a><a href="/calls">Recorded Calls</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 class="page-title">Q1 — Aria, Business-Loan Voice Agent</h1>
+  <p class="page-sub">Every factual answer is grounded in the Q2 knowledge base. Replies are spoken aloud in your browser. Toggle voice off if you prefer text only.</p>
+
+  <div class="split">
+    <div class="panel">
+      <h2>Talk to Aria</h2>
+      <p class="hint">Ask about products, rates, eligibility, documents, or objections — or say "talk to a person".</p>
+      <div class="row">
+        <input id="q" type="text" placeholder="e.g. How much can I borrow with a working capital loan?" onkeydown="if(event.key==='Enter')ask()"/>
+        <button class="btn" onclick="ask()">Ask</button>
+      </div>
+      <div class="chips">
+        <button class="btn ghost" onclick="preset('How much can I borrow with a working capital loan?')">product</button>
+        <button class="btn ghost" onclick="preset('What is the prepayment fee and when can I prepay?')">policy</button>
+        <button class="btn ghost" onclick="preset('Your interest rate is too high, why should I proceed?')">objection</button>
+        <button class="btn ghost" onclick="preset('Do you offer loans in US dollars?')">out-of-scope</button>
+        <button class="btn ghost" onclick="preset('Can I talk to a person?')">escalate</button>
+      </div>
+      <label class="hint"><input type="checkbox" id="voice" checked/> speak answers aloud</label>
+      <div class="log" id="log"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Preliminary Eligibility</h2>
+      <p class="hint">Same rules the agent uses on a call. Preliminary only — not a final approval.</p>
+      <div class="kv"><span>Annual revenue (lakh)</span><input type="number" id="rev" value="40" style="width:120px"/></div>
+      <div class="kv"><span>Business vintage (months)</span><input type="number" id="vin" value="36" style="width:120px"/></div>
+      <div class="kv"><span>Credit score</span><input type="number" id="score" value="760" style="width:120px"/></div>
+      <div style="margin-top:12px"><button class="btn" onclick="checkElig()">Check eligibility</button></div>
+      <div id="eligOut" style="margin-top:14px"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+ const synth=window.speechSynthesis;
+ function speak(t){ if(!document.getElementById('voice').checked) return;
+   synth.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='en-US'; synth.speak(u); }
+ function bubble(cls,who,html){ const d=document.createElement('div'); d.className='bubble '+cls;
+   d.innerHTML='<div class="who">'+who+'</div>'+html; const box=document.getElementById('log');
+   box.appendChild(d); box.scrollTop=box.scrollHeight; }
+ function preset(q){ document.getElementById('q').value=q; ask(); }
+ async function ask(){
+   const q=document.getElementById('q').value.trim(); if(!q) return;
+   bubble('you','You',q); document.getElementById('q').value='';
+   const r=await fetch('/api/q1/ask',{method:'POST',headers:{'Content-Type':'application/json'},
+     body:JSON.stringify({question:q})}).then(x=>x.json());
+   let cls='bot'; if(r.kind==='fallback')cls='bot fb'; if(r.kind==='escalation')cls='bot esc';
+   let cite=(r.citations&&r.citations.length)?'<div class="cite">source: '+r.citations[0]+'</div>':'';
+   let conf=(r.confidence!=null)?' <span class="pill">conf '+r.confidence+'</span>':'';
+   bubble(cls,'Aria'+conf,r.answer+cite);
+   speak(r.answer);
+ }
+ async function checkElig(){
+   const rev=document.getElementById('rev').value, vin=document.getElementById('vin').value, s=document.getElementById('score').value;
+   const r=await fetch(`/api/q1/eligibility?revenue=${rev}&vintage=${vin}&score=${s}`).then(x=>x.json());
+   let html='<div class="verdict '+r.verdict+'">'+r.verdict.replace(/_/g,' ').toUpperCase()+'</div>';
+   html+='<ul style="color:var(--muted);font-size:13px;padding-left:18px">'+r.reasons.map(x=>'<li>'+x+'</li>').join('')+'</ul>';
+   if(r.products.length) html+='<div class="hint">Suggested: '+r.products.join(', ')+'</div>';
+   html+='<div class="cite">'+r.disclaimer+'</div>';
+   document.getElementById('eligOut').innerHTML=html;
+ }
+</script>
+</body>
+</html>

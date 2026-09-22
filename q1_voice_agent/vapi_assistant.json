@@ -1,0 +1,118 @@
+{
+  "_comment": "Import into Vapi (Assistants > Create > Import JSON, or via API). Replace WEBHOOK_BASE_URL with your deployed q1_voice_agent.webhook URL, and set the x-vapi-secret header to your VAPI_WEBHOOK_SECRET. The systemPrompt/firstMessage mirror q1_voice_agent/prompts.py.",
+  "name": "Aria - Business Loan Qualification",
+  "firstMessage": "Hi, this is Aria from the business lending team. I can help check if your business qualifies for a loan and answer any questions. Is now a good time for a couple of quick questions?",
+  "transcriber": {
+    "provider": "deepgram",
+    "model": "nova-2",
+    "language": "en"
+  },
+  "voice": {
+    "provider": "11labs",
+    "voiceId": "rachel"
+  },
+  "model": {
+    "provider": "openai",
+    "model": "gpt-4o-mini",
+    "temperature": 0.3,
+    "messages": [
+      {
+        "role": "system",
+        "content": "You are Aria, a friendly business-loan qualification specialist. Keep replies short and natural for a phone call, one question at a time. For ANY factual question about products, rates, fees, eligibility, documents, timelines, policies, or objections, you MUST call query_knowledge_base and answer ONLY from what it returns. Never invent numbers or policies. If the knowledge base returns grounded=false, say you don't have that detail confirmed and won't guess, then offer a specialist follow-up. Qualify the caller by collecting business type/purpose, approximate annual revenue, months in operation (vintage), and rough credit band one at a time, then call check_eligibility. Explain results as preliminary, not final approval. For objections, call query_knowledge_base first. For conflicting details, restate and ask which is correct. For out-of-scope questions, say it's outside your scope and offer a specialist. On any human-assistance request, frustration, or complex case, call escalate_to_human. If interested and roughly eligible, ask consent then call create_lead and confirm what you recorded."
+      }
+    ],
+    "tools": [
+      {
+        "type": "function",
+        "function": {
+          "name": "query_knowledge_base",
+          "description": "Retrieve a grounded answer from the business-loan knowledge base. Use for every factual question about products, rates, fees, eligibility, documents, timelines, policies, or objections.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "question": { "type": "string", "description": "The caller's question, rephrased clearly." },
+              "category": {
+                "type": "string",
+                "enum": ["product", "policy", "qualification", "faq", "objection", "partnership_benefits"],
+                "description": "Optional category hint to focus retrieval."
+              }
+            },
+            "required": ["question"]
+          }
+        },
+        "server": {
+          "url": "WEBHOOK_BASE_URL/vapi",
+          "headers": { "x-vapi-secret": "YOUR_VAPI_WEBHOOK_SECRET" }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "check_eligibility",
+          "description": "Compute a preliminary business-loan eligibility verdict from collected details.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "annual_revenue_lakh": { "type": "number" },
+              "vintage_months": { "type": "integer" },
+              "credit_score": { "type": "integer" },
+              "applicant_age": { "type": "integer" }
+            }
+          }
+        },
+        "server": {
+          "url": "WEBHOOK_BASE_URL/vapi",
+          "headers": { "x-vapi-secret": "YOUR_VAPI_WEBHOOK_SECRET" }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "create_lead",
+          "description": "Create a CRM lead after the caller consents to sharing their details.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "name": { "type": "string" },
+              "phone": { "type": "string" },
+              "business_type": { "type": "string" },
+              "purpose": { "type": "string" },
+              "revenue_lakh": { "type": "number" },
+              "vintage_months": { "type": "integer" },
+              "credit_band": { "type": "string" },
+              "eligibility": { "type": "string" }
+            },
+            "required": ["name"]
+          }
+        },
+        "server": {
+          "url": "WEBHOOK_BASE_URL/vapi",
+          "headers": { "x-vapi-secret": "YOUR_VAPI_WEBHOOK_SECRET" }
+        }
+      },
+      {
+        "type": "function",
+        "function": {
+          "name": "escalate_to_human",
+          "description": "Queue a human callback when the caller asks for a person, is frustrated, or the case is complex/sensitive.",
+          "parameters": {
+            "type": "object",
+            "properties": {
+              "reason": { "type": "string" },
+              "call_id": { "type": "string" },
+              "notes": { "type": "string" }
+            },
+            "required": ["reason"]
+          }
+        },
+        "server": {
+          "url": "WEBHOOK_BASE_URL/vapi",
+          "headers": { "x-vapi-secret": "YOUR_VAPI_WEBHOOK_SECRET" }
+        }
+      }
+    ]
+  },
+  "endCallFunctionEnabled": true,
+  "recordingEnabled": true,
+  "serverMessages": ["tool-calls", "end-of-call-report"]
+}

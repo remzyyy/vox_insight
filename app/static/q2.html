@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Q2 · Knowledge Base — VoxInsight</title>
+<link rel="stylesheet" href="/static/style.css"/>
+</head>
+<body>
+<nav class="nav">
+  <a class="brand" href="/"><span class="dot"></span> VoxInsight</a>
+  <div class="links">
+    <a href="/">Home</a><a href="/q1">Q1 · Voice Agent</a>
+    <a href="/q2" class="active">Q2 · Knowledge Base</a><a href="/q3">Q3 · Native Bots</a>
+    <a href="/q4">Q4 · Live Nudges</a><a href="/calls">Recorded Calls</a>
+  </div>
+</nav>
+
+<div class="container">
+  <h1 class="page-title">Q2 — Production Knowledge Base</h1>
+  <p class="page-sub">Cleaned, PII-safe, traceable records. Search returns ranked chunks with source citations and a confidence gate (the same retrieval the voice agent uses).</p>
+
+  <div class="panel" style="margin-bottom:18px">
+    <div class="row">
+      <input id="q" type="text" placeholder="e.g. what documents do I need to apply?" onkeydown="if(event.key==='Enter')search()"/>
+      <button class="btn" onclick="search()">Search</button>
+    </div>
+    <div class="chips">
+      <button class="btn ghost" onclick="preset('working capital loan amount')">product</button>
+      <button class="btn ghost" onclick="preset('prepayment fee and timing')">policy</button>
+      <button class="btn ghost" onclick="preset('minimum revenue and vintage to qualify')">qualification</button>
+      <button class="btn ghost" onclick="preset('how many days until disbursal')">faq</button>
+      <button class="btn ghost" onclick="preset('interest rate too high objection')">objection</button>
+    </div>
+    <div id="meta" class="hint"></div>
+  </div>
+
+  <div id="results"></div>
+</div>
+
+<script>
+ fetch('/api/q2/stats').then(r=>r.json()).then(d=>{
+   document.getElementById('meta').textContent='KB: '+d.chunks+' chunks · model '+d.embed_model+' · '+(d.openai?'OpenAI':'offline');
+ });
+ function preset(q){ document.getElementById('q').value=q; search(); }
+ async function search(){
+   const q=document.getElementById('q').value.trim(); if(!q) return;
+   const r=await fetch('/api/q2/search?q='+encodeURIComponent(q)+'&k=3').then(x=>x.json());
+   let head='<div class="panel" style="margin-bottom:14px"><b>Query:</b> '+r.query+
+     ' &nbsp; <span class="pill">top score '+r.top_score+'</span> '+
+     '<span class="pill" style="color:'+(r.confident?'var(--green)':'var(--orange)')+'">'+
+     (r.confident?'confident':'low confidence → agent would fall back')+'</span></div>';
+   let body=r.results.map((s,i)=>(
+     '<div class="panel" style="margin-bottom:10px">'+
+     '<div class="row" style="justify-content:space-between"><b>['+(i+1)+'] '+s.title+'</b>'+
+     '<span class="pill">'+s.category+' · '+s.score+'</span></div>'+
+     '<div class="hint" style="margin:6px 0">'+s.snippet+'…</div>'+
+     '<div class="cite">source: '+s.citation+'</div></div>'
+   )).join('');
+   document.getElementById('results').innerHTML=head+body;
+ }
+</script>
+</body>
+</html>

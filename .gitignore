@@ -1,0 +1,29 @@
+# Secrets
+.env
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+
+# Data / generated
+data/kb_store.sqlite
+data/*.faiss
+data/*.index
+data/*.pkl
+data/*.tfidf.pkl
+*.log
+
+# Audio / recordings (do not commit customer data)
+docs/recordings/*.wav
+docs/recordings/*.mp3
+docs/recordings/*.m4a
+
+# OS
+.DS_Store
+Thumbs.db
